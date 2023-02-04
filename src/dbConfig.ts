@@ -9,7 +9,7 @@ const AppDataSource = new DataSource({
     password: 'dhairya',
     database: 'EverVibe',
     synchronize: true,
-    logging: true,
+    logging: false,
     entities: [User]
 })
 
