@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { FollowActions, UserActions } from "./user.dto";
+import { FollowActions, UpdateProfileAction, UserActions } from "./user.dto";
 import { validate, validateOrReject, ValidationError } from "class-validator";
 import { User } from "../entities/User";
 import AppDataSource from "../dbConfig";
@@ -76,7 +76,52 @@ class UserController {
         }
     }
 
+    private static throwUnauthorized(){
+        return new Res(false, 'Login required', {authenticated: false, user: null}, 401);
+    }
 
+
+    private static throwInternalServer(){
+        return new Res(false, 'Internal Server', null, 500);
+    }
+
+
+    static async updateProfile(req: Request<{}, {}, UpdateProfileAction>, res: Response){
+        try {
+            const current_user = req.user!;
+            let user = userRepo.create(current_user);
+
+            user.name = req.body.name ? req.body.name : user.name;
+            user.userName = req.body.userName ? req.body.userName : user.userName;
+            user.gender = req.body.gender ? req.body.gender : user.gender;
+            user.bio = req.body.bio ? req.body.bio : user.bio;
+            user.profile_image = req.body.profile_image? req.body.profile_image : user.profile_image;
+
+            user = userRepo.create(user);
+            await userRepo.save(user);
+
+            res.status(200).json(new Res(true, 'updated!', null));
+
+        } catch (error) {
+            if(error instanceof TypeORMError){
+                return res.status(200).json(new Res(false, error.message, null));
+            }
+            console.log(error);
+            res.status(500).json(UserController.throwInternalServer());
+        }
+    }
+
+    // static async followUser(req: Request<{}, {}, {target_user_id?: string}>, res: Response){
+    //     try {
+    //         const current_user = req.user!;
+    //         const {target_user_id} = req.body;
+            
+
+
+    //     } catch (error) {
+            
+    //     }
+    // }
 
 }
 

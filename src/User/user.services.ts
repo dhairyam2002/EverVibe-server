@@ -6,7 +6,7 @@ class Service {
 
     private async getJwtToken(id: string): Promise<string> {
         const token = await sign({ id: id }, process.env.JWT_SECRET ? process.env.JWT_SECRET : 'RANDOMSTRING', {
-            expiresIn: 30
+            expiresIn: '3d'
         })
         return token;
     }
@@ -79,6 +79,15 @@ class Service {
         }
 
     }
+
+    // async followUser(userRepo: Repository<User>, payload: {current_user: string, target_user_id? : string}){
+    //     try {
+    //         if()
+    //     } catch (error) {
+            
+    //     }
+    // }
+
 
 
 }
