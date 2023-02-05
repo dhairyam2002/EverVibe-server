@@ -6,6 +6,7 @@ AppDataSource.initialize().then(()=> {
 ).catch((err) => console.log(err));
 
 app.listen(3000, () => {
+    console.log(process.env.JWT_SECRET);
     console.log(`Server running on PORT 3000`);
 });
 
