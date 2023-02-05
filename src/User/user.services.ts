@@ -6,7 +6,7 @@ class Service {
 
     private async getJwtToken(id: string): Promise<string> {
         const token = await sign({ id: id }, process.env.JWT_SECRET ? process.env.JWT_SECRET : 'RANDOMSTRING', {
-            expiresIn: process.env.JWT_EXPIRE ? process.env.JWT_EXPIRE : '2d'
+            expiresIn: 30
         })
         return token;
     }

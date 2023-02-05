@@ -67,6 +67,17 @@ class UserController {
             res.status(200).json(new Res(false, 'server side error', null));
         }
     }
+
+    static async getMe(req: Request, res: Response){
+        try {
+            res.status(200).json(new Res(true, '', {authenticated: req.user ? true : false, user: req.user}));
+        } catch (error) {
+            res.status(500).json(new Res(false, 'internal server error', null, 500));
+        }
+    }
+
+
+
 }
 
 
