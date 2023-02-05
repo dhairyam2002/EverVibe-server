@@ -23,3 +23,8 @@ export class UserDto{
         this.userName  = user.userName
     }
 }
+
+export interface FollowActions{
+    current_user: string;
+    target_user: string;
+}
