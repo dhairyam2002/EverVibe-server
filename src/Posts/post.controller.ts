@@ -55,12 +55,18 @@ class PostController {
             }
             console.log(req.user);
 
-            const response = await service.deletePost(postRepo, {id});
-            const user = await AppDataSource.getRepository(User).findOne({where: {id: req.user!.id}});
-
-            console.log(user);
+            const response = await service.deletePost(postRepo, {id, user: req.user!});
             res.status(response.statusCode).json(response);
             
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer);
+        }
+    }
+
+    static async getFeeds(req: Request, res: Response){
+        try {
+            const response = await service.feeds(postRepo, {user: req.user!});
+            return res.status(response.statusCode).json(response);
         } catch (error) {
             res.status(500).json(ErrorHandler.internalServer);
         }

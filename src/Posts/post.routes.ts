@@ -5,4 +5,7 @@ const router = express.Router();
 
 router.route('/posts/create').post(authenticate, PostController.newPost);
 router.route('/post/:id').get(authenticate, PostController.getPostByPostId).delete(authenticate, PostController.deletePost);
+
+
+router.route('/feeds').get(authenticate, PostController.getFeeds);
 export default router;

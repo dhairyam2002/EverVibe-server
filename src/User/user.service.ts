@@ -5,8 +5,8 @@ import { Response } from "../interfaces/response";
 import { ErrorHandler } from "../errorHandling";
 class Service {
 
-    private async getJwtToken(id: string): Promise<string> {
-        const token = await sign({ id: id }, process.env.JWT_SECRET ? process.env.JWT_SECRET : 'RANDOMSTRING', {
+    private async getJwtToken(user_id: string): Promise<string> {
+        const token = await sign({ user_id: user_id }, process.env.JWT_SECRET ? process.env.JWT_SECRET : 'RANDOMSTRING', {
             expiresIn: '3d'
         })
         return token;
@@ -23,7 +23,7 @@ class Service {
 
     async createUser(userRepo: Repository<User>, payload: User) {
         try {
-            let user = await userRepo.findOne({ where: { id: payload.id } });
+            let user = await userRepo.findOne({ where: { user_id: payload.user_id } });
 
             if (user) {
                 return { success: false, message: "User already exists!", data: null }
@@ -32,7 +32,7 @@ class Service {
             user = await userRepo.save(payload);
 
             console.log(user);
-            const token = await this.getJwtToken(user.id);
+            const token = await this.getJwtToken(user.user_id);
 
             return { success: true, message: "Registed successfully!", data: { token } }
 
@@ -47,7 +47,7 @@ class Service {
 
     async findUserById(userRepo: Repository<User>, payload: { id: string }) {
         try {
-            const user = await userRepo.findOne({ where: { id: payload.id } });
+            const user = await userRepo.findOne({ where: { user_id: payload.id } });
 
             if (!user) {
                 return new Response(false, 'No such user', { userExists: false, user: null });
@@ -60,12 +60,12 @@ class Service {
         }
     }
 
-    async findUserByIdUserNameOrEmail(userRepo: Repository<User>, payload: { id?: string, userName?: string, email?: string }) {
+    async findUserByIdUserNameOrEmail(userRepo: Repository<User>, payload: { user_id?: string, userName?: string, email?: string }) {
         try {
             console.log(payload);
             const user = await userRepo.findOne({ where: payload });
 
-            if (!user || (!payload.id && !payload.userName && !payload.email)) {
+            if (!user || (!payload.user_id && !payload.userName && !payload.email)) {
                 return new Response(false, 'No such user exists!', { userExists: false, user: null });
             }
             return new Response(true, '', { userExists: true, user });
@@ -75,11 +75,11 @@ class Service {
         }
     }
 
-    async loginUser(userRepo: Repository<User>, payload: { id?: string }) {
+    async loginUser(userRepo: Repository<User>, payload: { user_id?: string }) {
         try {
             const res = await this.findUserByIdUserNameOrEmail(userRepo, payload);
             if(res.success == true){
-                const token = await this.getJwtToken(payload.id!);
+                const token = await this.getJwtToken(payload.user_id!);
                 return new Response(true, '', {token});
             }
             return new Response(false, 'No such user exists!', null);
@@ -92,7 +92,7 @@ class Service {
 
     async followUser(userRepo: Repository<User>, payload: {current_user: User, target_user_id : string}){
         try {
-            const target_user = await userRepo.findOne({where: {id: payload.target_user_id}, relations: ['following', 'followedBy']});
+            const target_user = await userRepo.findOne({where: {user_id: payload.target_user_id}, relations: ['following', 'followedBy']});
 
             if(!target_user){
                 return new Response(false, 'No target user found', null);

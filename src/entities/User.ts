@@ -6,7 +6,7 @@ import { Post } from "./Post";
 export class User{
     @PrimaryColumn()
     @IsNotEmpty({message: 'id required'})
-    id: string
+    user_id: string
 
     @Column({unique: true, nullable: false})
     @IsNotEmpty({message: 'userName required'})

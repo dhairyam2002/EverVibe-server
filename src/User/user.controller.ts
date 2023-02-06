@@ -37,7 +37,7 @@ class UserController {
     static async getUserByIdUserNameEmail(req: Request<{}, {}, {}, { id? : string, userName? : string, email?: string}>, res: Response){
         try {
             const payload = {
-                id: req.query.id,
+                user_id: req.query.id,
                 userName: req.query.userName,
                 email: req.query.email
             }
@@ -53,7 +53,7 @@ class UserController {
     static async login(req: Request<{}, {}, {id?: string}>, res: Response){
         try {
             const payload = {
-                id : req.body.id
+                user_id : req.body.id
             }
 
             const response = await service.loginUser(userRepo, payload);
