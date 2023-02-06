@@ -4,7 +4,7 @@ import { validate, validateOrReject, ValidationError } from "class-validator";
 import { User } from "../entities/User";
 import AppDataSource from "../dbConfig";
 import { Repository, TypeORMError, UsingJoinColumnIsNotAllowedError } from "typeorm";
-import Service from "./user.services";
+import Service from "./user.service";
 import { Response as Res } from "../interfaces/response";
 import { ErrorHandler } from "../errorHandling";
 

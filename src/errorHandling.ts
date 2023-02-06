@@ -11,4 +11,8 @@ export class ErrorHandler{
     static unauthorized(){
         return new Response(false, 'Authentication required', null, 401);
     }
+
+    static BadRequest(){
+        return new Response(false, 'Bad params/queries', null, 400);
+    }
 }
