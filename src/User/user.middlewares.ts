@@ -20,7 +20,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         }
 
         const userRepo = AppDataSource.getRepository(User);
-        const user = await userRepo.findOne({where: {id: payload.id}, relations: ['following', 'followedBy']});
+        const user = await userRepo.findOne({where: {id: payload.id}, relations: ['following', 'followedBy', 'posts']});
+
         if(!user){
             return res.status(401).json(new Res(false, 'Failed to authenticate user', {authenticated: false}, 401))
         }

@@ -13,7 +13,7 @@ export class Post{
     @ManyToOne(() => User, (user) => user.posts)
     user: User
 
-
+    
     @ManyToMany(()=> User, (user) => user.likes)
     @JoinTable()
     likes: User[]
