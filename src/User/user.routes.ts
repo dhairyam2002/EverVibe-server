@@ -9,4 +9,6 @@ router.route('/user').get(UserController.getUserByIdUserNameEmail);
 router.route('/login').post(UserController.login);
 router.route('/profile/update').put(authenticate, UserController.updateProfile);
 router.route('/me').get(authenticate, UserController.getMe);
+
+router.route('/user/follow').put(authenticate, UserController.followUser);
 export default router;

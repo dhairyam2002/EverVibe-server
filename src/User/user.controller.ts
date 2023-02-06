@@ -6,6 +6,7 @@ import AppDataSource from "../dbConfig";
 import { Repository, TypeORMError, UsingJoinColumnIsNotAllowedError } from "typeorm";
 import Service from "./user.services";
 import { Response as Res } from "../interfaces/response";
+import { ErrorHandler } from "../errorHandling";
 
 let userRepo: Repository<User> = AppDataSource.getRepository(User);
 const service = new Service();
@@ -29,11 +30,7 @@ class UserController {
             res.status(200).json(response);
 
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error,
-                data: {}
-            })
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
 
@@ -49,7 +46,7 @@ class UserController {
 
         } catch (error) {
             console.log(error);
-            res.status(200).json(new Res(false, 'server side error', null));
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
 
@@ -64,7 +61,7 @@ class UserController {
             res.status(response.statusCode).json(response);
         } catch (error) {
             console.log(error);
-            res.status(200).json(new Res(false, 'server side error', null));
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
 
@@ -72,19 +69,9 @@ class UserController {
         try {
             res.status(200).json(new Res(true, '', {authenticated: req.user ? true : false, user: req.user}));
         } catch (error) {
-            res.status(500).json(new Res(false, 'internal server error', null, 500));
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
-
-    private static throwUnauthorized(){
-        return new Res(false, 'Login required', {authenticated: false, user: null}, 401);
-    }
-
-
-    private static throwInternalServer(){
-        return new Res(false, 'Internal Server', null, 500);
-    }
-
 
     static async updateProfile(req: Request<{}, {}, UpdateProfileAction>, res: Response){
         try {
@@ -107,21 +94,28 @@ class UserController {
                 return res.status(200).json(new Res(false, error.message, null));
             }
             console.log(error);
-            res.status(500).json(UserController.throwInternalServer());
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
 
-    // static async followUser(req: Request<{}, {}, {target_user_id?: string}>, res: Response){
-    //     try {
-    //         const current_user = req.user!;
-    //         const {target_user_id} = req.body;
-            
+    static async followUser(req: Request<{}, {}, {target_user_id?: string}>, res: Response){
+        try {
+            const current_user = req.user!;
+            const {target_user_id} = req.body;
+
+            if(!target_user_id){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Target user required'));
+            }
+
+            const response = await service.followUser(userRepo,{current_user, target_user_id});
+
+            res.status(response.statusCode).json(response);
 
 
-    //     } catch (error) {
-            
-    //     }
-    // }
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
 
 }
 

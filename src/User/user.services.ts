@@ -2,6 +2,7 @@ import { Repository, TypeORMError } from "typeorm";
 import { User } from "../entities/User";
 import { verify, decode, sign } from 'jsonwebtoken';
 import { Response } from "../interfaces/response";
+import { ErrorHandler } from "../errorHandling";
 class Service {
 
     private async getJwtToken(id: string): Promise<string> {
@@ -9,6 +10,15 @@ class Service {
             expiresIn: '3d'
         })
         return token;
+    }
+
+    throwUnauthorized(){
+        return new Response(false, 'Login required', {authenticated: false, user: null}, 401);
+    }
+
+
+    throwInternalServer(){
+        return new Response(false, 'Internal Server', null, 500);
     }
 
     async createUser(userRepo: Repository<User>, payload: User) {
@@ -80,13 +90,34 @@ class Service {
 
     }
 
-    // async followUser(userRepo: Repository<User>, payload: {current_user: string, target_user_id? : string}){
-    //     try {
-    //         if()
-    //     } catch (error) {
-            
-    //     }
-    // }
+    async followUser(userRepo: Repository<User>, payload: {current_user: User, target_user_id : string}){
+        try {
+            const target_user = await userRepo.findOne({where: {id: payload.target_user_id}, relations: ['following', 'followedBy']});
+
+            if(!target_user){
+                return new Response(false, 'No target user found', null);
+            }
+
+            const {followedBy} = target_user;
+            const {following} = payload.current_user;
+
+            following.push(target_user);
+            followedBy.push(payload.current_user);
+
+            await userRepo.save(payload.current_user);
+            await userRepo.save(target_user);
+
+            let user = await userRepo.find({relations: ['following', 'followedBy']});
+            console.log(user);
+            return new Response(true, 'Followed', null);
+
+        } catch (error) {
+            if(error instanceof TypeORMError){
+                return new Response(false, error.message, null);
+            }
+            return ErrorHandler.internalServer();
+        }
+    }
 
 
 
