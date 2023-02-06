@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { Comment } from './entities/Comment';
 import { Post } from './entities/Post';
 import { User } from './entities/User';
+
 const AppDataSource = new DataSource({
     type: 'mysql',
     host: 'localhost',

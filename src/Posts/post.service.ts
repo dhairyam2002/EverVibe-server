@@ -61,9 +61,8 @@ class PostService{
 
             user.following.map((item) => ids.push(item.user_id));
 
-            let feeds = await postRepo.find({where: {user: In(ids)}, relations: {user: true}})
-
-            return new Response(true, '', feeds);
+            let feeds = await postRepo.find({where: {user: In(ids)}, relations: {user: true}});
+            return new Response(true, '', feeds.reverse());
 
         } catch (error) {
             if(error instanceof TypeORMError){

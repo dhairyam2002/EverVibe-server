@@ -12,12 +12,12 @@ class Service {
         return token;
     }
 
-    throwUnauthorized(){
-        return new Response(false, 'Login required', {authenticated: false, user: null}, 401);
+    throwUnauthorized() {
+        return new Response(false, 'Login required', { authenticated: false, user: null }, 401);
     }
 
 
-    throwInternalServer(){
+    throwInternalServer() {
         return new Response(false, 'Internal Server', null, 500);
     }
 
@@ -78,9 +78,9 @@ class Service {
     async loginUser(userRepo: Repository<User>, payload: { user_id?: string }) {
         try {
             const res = await this.findUserByIdUserNameOrEmail(userRepo, payload);
-            if(res.success == true){
+            if (res.success == true) {
                 const token = await this.getJwtToken(payload.user_id!);
-                return new Response(true, '', {token});
+                return new Response(true, '', { token });
             }
             return new Response(false, 'No such user exists!', null);
         } catch (error) {
@@ -90,16 +90,16 @@ class Service {
 
     }
 
-    async followUser(userRepo: Repository<User>, payload: {current_user: User, target_user_id : string}){
+    async followUser(userRepo: Repository<User>, payload: { current_user: User, target_user_id: string }) {
         try {
-            const target_user = await userRepo.findOne({where: {user_id: payload.target_user_id}, relations: ['following', 'followedBy']});
+            const target_user = await userRepo.findOne({ where: { user_id: payload.target_user_id }, relations: ['following', 'followedBy'] });
 
-            if(!target_user){
+            if (!target_user) {
                 return new Response(false, 'No target user found', null);
             }
 
-            const {followedBy} = target_user;
-            const {following} = payload.current_user;
+            const { followedBy } = target_user;
+            const { following } = payload.current_user;
 
             following.push(target_user);
             followedBy.push(payload.current_user);
@@ -107,18 +107,55 @@ class Service {
             await userRepo.save(payload.current_user);
             await userRepo.save(target_user);
 
-            let user = await userRepo.find({relations: ['following', 'followedBy']});
+            let user = await userRepo.find({ relations: ['following', 'followedBy'] });
             console.log(user);
             return new Response(true, 'Followed', null);
 
         } catch (error) {
-            if(error instanceof TypeORMError){
+            if (error instanceof TypeORMError) {
                 return new Response(false, error.message, null);
             }
             return ErrorHandler.internalServer();
         }
     }
 
+    async getPosts(userRepo: Repository<User>, payload: { current_user: User, target_user_id: string }) {
+        try {
+            const target_user = await userRepo.findOne({
+                where: { user_id: payload.target_user_id }, relations: {
+                    posts: true
+                }
+            });
+
+            if (!target_user) {
+                return new Response(false, 'No such user', null);
+            }
+
+            return new Response(true, '', { posts: target_user.posts });
+        } catch (error) {
+            // if (error instanceof TypeORMError) {
+            //     return ErrorHandler.unprocessableInput(error.message);
+            // }
+            console.log(error);
+            return ErrorHandler.internalServer();
+        }
+    }
+
+    async getUserByUserId(userRepo: Repository<User>, payload: { current_user: User, target_user_id: string }) {
+        try {
+            const target_user = await userRepo.findOne({
+                where: { user_id: payload.target_user_id },
+                relations: {
+                    followedBy: true,
+                    following: true
+                }
+            })
+            return new Response(true, '', { user: target_user });
+        } catch (error) {
+            console.log(error);
+            return ErrorHandler.internalServer();
+        }
+    }
 
 
 }
