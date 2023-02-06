@@ -1,7 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional } from "class-validator";
-import { Column, Entity, JoinTable, ManyToMany, PrimaryColumn } from "typeorm";
-import { UserDto } from "../User/user.dto";
-
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryColumn } from "typeorm";
+import { Comment } from "./Comment";
+import { Post } from "./Post";
 @Entity()
 export class User{
     @PrimaryColumn()
@@ -25,6 +25,12 @@ export class User{
     @IsOptional()
     bio: string
 
+    @Column({default: null})
+    gender: string;
+
+    @Column({default: null})
+    profile_image: string;
+
     @ManyToMany(() => User, (user)=> user.followedBy)
     @JoinTable()
     following: User[]
@@ -32,5 +38,14 @@ export class User{
     @ManyToMany(() => User, (user)=> user.following)
     followedBy: User[]
 
+
+    @OneToMany(()=> Post, (post)=> post.user)
+    posts: Post[]
+
+    @ManyToMany(() => Post, post => post.likes)
+    likes: Post[]
+
+    @OneToMany(() => Comment, comment => comment.user)
+    comments: Comment[]
 
 }

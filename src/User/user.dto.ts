@@ -1,30 +1,25 @@
 import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
-export class UserDto{
-    @IsNotEmpty({message: 'id required'})
+
+export interface UserActions{
     id: string;
-
-    @IsNotEmpty({message: 'Name required'})
     name: string;
-
-    @IsNotEmpty({message: 'User name required'})
-    userName: string;
-
-    @IsNotEmpty({message: 'Email required'})
-    @IsEmail({}, {context: {developerNote: 'Please enter valid email'}})
     email: string;
-
-    @IsOptional()
-    bio: string;
-    
-    constructor(user: UserDto){
-        this.id = user.id;
-        this.name = user.name,
-        this.email = user.email,
-        this.userName  = user.userName
-    }
+    userName: string;
+    bio?: string;
+    gender?: string;
+    profile_image?: string;
 }
 
 export interface FollowActions{
     current_user: string;
     target_user: string;
+}
+
+export interface UpdateProfileAction{
+    name?: string
+    userName?: string
+    gender?: string
+    bio?: string
+    profile_image?: string;
+
 }

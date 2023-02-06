@@ -1,95 +1,123 @@
 import { Request, Response, NextFunction } from "express";
-import { FollowActions, UserDto } from "./user.dto";
-import { validate, validateOrReject } from "class-validator";
+import { FollowActions, UpdateProfileAction, UserActions } from "./user.dto";
+import { validate, validateOrReject, ValidationError } from "class-validator";
 import { User } from "../entities/User";
 import AppDataSource from "../dbConfig";
 import { Repository, TypeORMError, UsingJoinColumnIsNotAllowedError } from "typeorm";
-interface UserObj {
-    name: string;
-}
+import Service from "./user.service";
+import { Response as Res } from "../interfaces/response";
+import { ErrorHandler } from "../errorHandling";
 
 let userRepo: Repository<User> = AppDataSource.getRepository(User);
-
+const service = new Service();
 
 class UserController {
-    
-    static async registerUser(req: Request<{}, {}, User>, res: Response, next: NextFunction) {
+    static async register(req: Request<{}, {}, UserActions>, res: Response, next: NextFunction) {
         try {
-
             let user = userRepo.create(req.body);
 
             try {
                 await validateOrReject(user);
             } catch (error) {
-                return res.status(400).json({
+                return res.status(422).json({
                     success: false,
                     message: error,
                     data: {}
                 })
             }
 
-            await userRepo.insert(user);
-            let payload = await userRepo.findOne({where: {id: req.body.id}});
-
-            res.json({success: true, message: "", data: {payload}});
+            const response = await service.createUser(userRepo, user);
+            res.status(200).json(response);
 
         } catch (error) {
-            if( error instanceof TypeORMError){
-                return res.status(200).json({
-                    success: false,
-                    message: error.message,
-                    data: {}
-                })
-            }
-            return res.status(400).json({
-                success: false,
-                message: error,
-                data: {}
-            })
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
 
-    static async followUser(req: Request<{}, {}, FollowActions>, res: Response, next: NextFunction){
+    static async getUserByIdUserNameEmail(req: Request<{}, {}, {}, { id? : string, userName? : string, email?: string}>, res: Response){
         try {
-            if(!req.body.current_user || !req.body.target_user) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Target user and current user required",
-                    data: {}
-                })
+            const payload = {
+                id: req.query.id,
+                userName: req.query.userName,
+                email: req.query.email
             }
+            const response = await service.findUserByIdUserNameOrEmail(userRepo, payload);
+            res.status(response.statusCode).json(response);
 
-            let current_user = await userRepo.findOne({where: {id: req.body.current_user}, relations: ['following']});
-            let target_user = await userRepo.findOne({where: {id: req.body.target_user}, relations: ['followedBy']});
-            if(!current_user || !target_user){
-                return res.status(400).json({
-                    success: false,
-                    message: "No user found!",
-                    data: {}
-                })
-            }
-
-            console.log(current_user);
-            current_user.following.push(target_user);
-            target_user.followedBy.push(current_user);
-            await userRepo.save(current_user);
-            await userRepo.save(target_user);
-            res.status(200).json({success: true});
         } catch (error) {
             console.log(error);
-            res.json({error: error})
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
 
-    static async getUserById(req: Request<{}, {}, FollowActions>, res: Response){
+    static async login(req: Request<{}, {}, {id?: string}>, res: Response){
         try {
-            const user = await userRepo.findOne({where: {id: req.body.current_user}, relations: ['following', 'followedBy']});
+            const payload = {
+                id : req.body.id
+            }
 
-            res.json(user);
+            const response = await service.loginUser(userRepo, payload);
+
+            res.status(response.statusCode).json(response);
         } catch (error) {
-            res.json(error);
+            console.log(error);
+            res.status(500).json(ErrorHandler.internalServer());
         }
     }
+
+    static async getMe(req: Request, res: Response){
+        try {
+            res.status(200).json(new Res(true, '', {authenticated: req.user ? true : false, user: req.user}));
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
+    static async updateProfile(req: Request<{}, {}, UpdateProfileAction>, res: Response){
+        try {
+            const current_user = req.user!;
+            let user = userRepo.create(current_user);
+
+            user.name = req.body.name ? req.body.name : user.name;
+            user.userName = req.body.userName ? req.body.userName : user.userName;
+            user.gender = req.body.gender ? req.body.gender : user.gender;
+            user.bio = req.body.bio ? req.body.bio : user.bio;
+            user.profile_image = req.body.profile_image? req.body.profile_image : user.profile_image;
+
+            user = userRepo.create(user);
+            await userRepo.save(user);
+
+            res.status(200).json(new Res(true, 'updated!', null));
+
+        } catch (error) {
+            if(error instanceof TypeORMError){
+                return res.status(200).json(new Res(false, error.message, null));
+            }
+            console.log(error);
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
+    static async followUser(req: Request<{}, {}, {target_user_id?: string}>, res: Response){
+        try {
+            const current_user = req.user!;
+            const {target_user_id} = req.body;
+
+            if(!target_user_id){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Target user required'));
+            }
+
+            const response = await service.followUser(userRepo,{current_user, target_user_id});
+
+            res.status(response.statusCode).json(response);
+
+
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
 }
+
 
 export default UserController;

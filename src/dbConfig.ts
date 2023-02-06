@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
+import { Comment } from './entities/Comment';
+import { Post } from './entities/Post';
 import { User } from './entities/User';
 const AppDataSource = new DataSource({
     type: 'mysql',
@@ -10,7 +12,7 @@ const AppDataSource = new DataSource({
     database: 'EverVibe',
     synchronize: true,
     logging: false,
-    entities: [User]
+    entities: [User, Comment, Post]
 })
 
 export default AppDataSource;
