@@ -37,7 +37,7 @@ class UserController {
     static async getUserByIdUserNameEmail(req: Request<{}, {}, {}, { id? : string, userName? : string, email?: string}>, res: Response){
         try {
             const payload = {
-                id: req.query.id,
+                user_id: req.query.id,
                 userName: req.query.userName,
                 email: req.query.email
             }
@@ -53,7 +53,7 @@ class UserController {
     static async login(req: Request<{}, {}, {id?: string}>, res: Response){
         try {
             const payload = {
-                id : req.body.id
+                user_id : req.body.id
             }
 
             const response = await service.loginUser(userRepo, payload);
@@ -111,9 +111,96 @@ class UserController {
 
             res.status(response.statusCode).json(response);
 
+            
 
         } catch (error) {
             res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
+    static async unfollowUser(req: Request<{}, {}, {target_user_id?: string}>, res: Response){
+        try {
+            const current_user = req.user!;
+            const {target_user_id} = req.body;
+
+            if(!target_user_id){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Target user required'));
+            }
+
+            const response = await service.unFollowUser(userRepo,{current_user, target_user_id});
+
+            res.status(response.statusCode).json(response);
+
+            
+
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
+    static async getUserByUserId(req: Request<{user_id?: string}>, res: Response){
+        try {
+            const {user_id} = req.params;
+
+            if(!user_id){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Params required'));
+            }
+
+            const response = await service.getUserByUserId(userRepo, {current_user: req.user!, target_user_id: user_id});
+
+            res.status(response.statusCode).json(response);
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+    static async getPostsByUser(req: Request<{target_user_id?: string}>, res: Response){
+        try {
+            const {target_user_id} = req.params;
+
+            if(!target_user_id){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Params required'));
+            }
+
+
+            const current_user = req.user!;
+
+            const response = await service.getPosts(userRepo, {current_user, target_user_id});
+            res.status(response.statusCode).json(response);
+
+
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
+    static async searchUser(req: Request<{}, {}, {}, {query: string}>, res: Response){
+        try {
+            const {query} = req.query;
+            if(!query){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Query string required'))
+            }
+
+            const response = await service.searchUser(userRepo, {query, current_user: req.user!});
+
+            res.status(response.statusCode).json(response);
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());            
+        }
+    }
+
+
+    static async searchByUserName(req: Request<{}, {}, {}, {query: string}>, res: Response){
+        try {
+            const {query} = req.query;
+            if(!query){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Query string required'))
+            }
+
+            const response = await service.searchByUserName(userRepo, {query, current_user: req.user!});
+
+            res.status(response.statusCode).json(response);
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());            
         }
     }
 

@@ -1,7 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 
 export interface UserActions{
-    id: string;
+    user_id: string;
     name: string;
     email: string;
     userName: string;

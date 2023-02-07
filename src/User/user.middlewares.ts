@@ -13,14 +13,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             return res.status(401).json(new Res(false, 'Login Required', {authenticated: false}, 401))
         }
         const secret = process.env.JWT_SECRET ? process.env.JWT_SECRET : 'SOMETHING'
-        const payload =  verify(token, secret) as {id: string};
+        const payload =  verify(token, secret) as {user_id: string};
 
-        if(!payload.id){
+        if(!payload.user_id){
             throw new Error();
         }
 
         const userRepo = AppDataSource.getRepository(User);
-        const user = await userRepo.findOne({where: {id: payload.id}, relations: ['following', 'followedBy']});
+        const user = await userRepo.findOne({where: {user_id: payload.user_id}, relations: ['following', 'followedBy']});
         if(!user){
             return res.status(401).json(new Res(false, 'Failed to authenticate user', {authenticated: false}, 401))
         }
