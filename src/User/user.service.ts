@@ -1,4 +1,4 @@
-import { Repository, TypeORMError } from "typeorm";
+import { ILike, Like, Repository, TypeORMError } from "typeorm";
 import { User } from "../entities/User";
 import { verify, decode, sign } from 'jsonwebtoken';
 import { Response } from "../interfaces/response";
@@ -119,6 +119,36 @@ class Service {
         }
     }
 
+    async unFollowUser(userRepo: Repository<User>, payload: { current_user: User, target_user_id: string }) {
+        try {
+            const target_user = await userRepo.findOne({ where: { user_id: payload.target_user_id }, relations: ['following', 'followedBy'] });
+
+            if (!target_user) {
+                return new Response(false, 'No target user found', null);
+            }
+
+
+            payload.current_user.following = payload.current_user.following.filter((user) => {
+                return user.user_id != target_user.user_id;
+            });
+
+            target_user.followedBy = target_user.followedBy.filter((user) => {
+                return user.user_id != payload.current_user.user_id;
+            })
+
+            await userRepo.save(payload.current_user);
+            await userRepo.save(target_user);
+
+            return new Response(true, 'UnFollowed', null);
+
+        } catch (error) {
+            if (error instanceof TypeORMError) {
+                return new Response(false, error.message, null);
+            }
+            return ErrorHandler.internalServer();
+        }
+    }
+
     async getPosts(userRepo: Repository<User>, payload: { current_user: User, target_user_id: string }) {
         try {
             const target_user = await userRepo.findOne({
@@ -151,6 +181,79 @@ class Service {
                 }
             })
             return new Response(true, '', { user: target_user });
+        } catch (error) {
+            console.log(error);
+            return ErrorHandler.internalServer();
+        }
+    }
+
+    async searchUser(userRepo: Repository<User>, payload: { query: string, current_user: User }) {
+        try {
+            let regex = new RegExp(payload.query);
+            const { query } = payload;
+            let substrs: Array<string> = [];
+            let temp = "";
+            for (let i = 0; i < query.length; i++) {
+                temp = temp.concat(query[i]);
+                substrs.push(temp);
+            }
+
+            substrs = substrs.reverse();
+            let users: Array<User> = []
+            for (let i = 0; i < substrs.length; i++) {
+                let user = await userRepo.find({ where: { name: Like(`${substrs[i]}%`)}, relations: {following: true, followedBy: true} });
+                users = user.concat(user);
+            }
+
+            let user = await userRepo.find({ where: { name: Like(`%${query}%`) }, relations: {following: true, followedBy: true} });
+            users = users.concat(user);
+            let uniqueUsers: Array<string> = [];
+
+            users.map((user) => {
+                let json = JSON.stringify(user);
+                if (!uniqueUsers.includes(json)) uniqueUsers.push(json);
+            })
+            let allUsers: User[] = [];
+            uniqueUsers.map((str) => allUsers.push(JSON.parse(str)));
+            return new Response(true, '', { users: allUsers });
+        } catch (error) {
+            console.log(error);
+            return ErrorHandler.internalServer();
+        }
+    }
+
+    async searchByUserName(userRepo: Repository<User>, payload: { query: string, current_user: User }) {
+        try {
+            let regex = new RegExp(payload.query);
+            const { query } = payload;
+            let substrs: Array<string> = [];
+            let temp = "";
+            for (let i = 0; i < query.length; i++) {
+                temp = temp.concat(query[i]);
+                substrs.push(temp);
+            }
+
+            substrs = substrs.reverse();
+            let users: Array<User> = []
+            for (let i = 0; i < substrs.length; i++) {
+                let user = await userRepo.find({ where: { userName: Like(`${substrs[i]}%`) }, relations: {following: true, followedBy: true} });
+                users = user.concat(user);
+            }
+
+            let user = await userRepo.find({ where: { userName: Like(`%${query}%`) }, relations: {
+                following: true,
+                followedBy: true
+            } });
+            users = users.concat(user);
+            let uniqueUsers: Array<string> = [];
+
+            users.map((user) => {
+                let json = JSON.stringify(user);
+                if (!uniqueUsers.includes(json)) uniqueUsers.push(json);
+            })
+            let allUsers: User[] = [];
+            uniqueUsers.map((str) => allUsers.push(JSON.parse(str)));
+            return new Response(true, '', { users: allUsers });
         } catch (error) {
             console.log(error);
             return ErrorHandler.internalServer();

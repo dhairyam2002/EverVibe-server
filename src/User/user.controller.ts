@@ -118,6 +118,26 @@ class UserController {
         }
     }
 
+    static async unfollowUser(req: Request<{}, {}, {target_user_id?: string}>, res: Response){
+        try {
+            const current_user = req.user!;
+            const {target_user_id} = req.body;
+
+            if(!target_user_id){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Target user required'));
+            }
+
+            const response = await service.unFollowUser(userRepo,{current_user, target_user_id});
+
+            res.status(response.statusCode).json(response);
+
+            
+
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
     static async getUserByUserId(req: Request<{user_id?: string}>, res: Response){
         try {
             const {user_id} = req.params;
@@ -150,6 +170,37 @@ class UserController {
 
         } catch (error) {
             res.status(500).json(ErrorHandler.internalServer());
+        }
+    }
+
+    static async searchUser(req: Request<{}, {}, {}, {query: string}>, res: Response){
+        try {
+            const {query} = req.query;
+            if(!query){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Query string required'))
+            }
+
+            const response = await service.searchUser(userRepo, {query, current_user: req.user!});
+
+            res.status(response.statusCode).json(response);
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());            
+        }
+    }
+
+
+    static async searchByUserName(req: Request<{}, {}, {}, {query: string}>, res: Response){
+        try {
+            const {query} = req.query;
+            if(!query){
+                return res.status(422).json(ErrorHandler.unprocessableInput('Query string required'))
+            }
+
+            const response = await service.searchByUserName(userRepo, {query, current_user: req.user!});
+
+            res.status(response.statusCode).json(response);
+        } catch (error) {
+            res.status(500).json(ErrorHandler.internalServer());            
         }
     }
 
